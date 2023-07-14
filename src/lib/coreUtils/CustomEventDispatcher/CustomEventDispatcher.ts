@@ -13,7 +13,7 @@ export interface IListener<IEvent extends AppEvent = AppEvent> {
 
 export class CustomEventDispatcher {
 	private _listeners: IList<Set<Function>> = {};
-	private parent: CustomEventDispatcher | null = null;
+	parent: CustomEventDispatcher | null = null;
 
 	addEventListener<IEvent extends AppEvent = AppEvent>(type: string, fn: IListener<IEvent>): void {
 		if (!this._listeners) this._listeners = {};

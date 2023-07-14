@@ -1,6 +1,6 @@
 import { App } from '../../App';
-import { Plugin } from '../../coreUtils/Plugin';
 import * as PIXI from 'pixi.js';
+import { CustomEventDispatcher, Plugin } from '../../coreUtils';
 
 export class Image extends Plugin {
 	private texture!: PIXI.Texture;
@@ -9,9 +9,11 @@ export class Image extends Plugin {
 	private naturalWidth: number | undefined;
 	private naturalHeight: number | undefined;
 	private ratio: number | undefined;
+	private sizes: { width: number; height: number } | undefined;
+	events = ['loaded', 'imageInfo'];
 
-	constructor(app: App) {
-		super(app);
+	constructor(app: App, parent?: CustomEventDispatcher) {
+		super(app, parent);
 		this.view = this.app.pixiApp.view;
 	}
 
@@ -26,19 +28,34 @@ export class Image extends Plugin {
 			this.dispatchEvent({
 				type: 'loaded',
 			});
-			window.addEventListener('resize', () => {
+			this.app.addEventListener('resize', () => {
 				this.updateSizes();
 			});
 		});
 	}
 
 	private updateSizes() {
-		const sizes = this.cover(this.view.width, this.view.height, this.ratio);
-		if (sizes) {
-			this.sprite.width = sizes.width;
-			this.sprite.height = sizes.height;
+		this.sizes = this.cover(this.view.width, this.view.height, this.ratio);
+		if (this.sizes) {
+			this.sprite.width = this.sizes.width;
+			this.sprite.height = this.sizes.height;
 		}
-		this.calcOffsets();
+		const offsets = this.calcOffsets();
+
+		if (offsets) {
+			this.sprite.x = offsets.x;
+			this.sprite.y = offsets.y;
+		}
+
+		this.dispatchEvent({
+			type: 'imageInfo',
+			detail: {
+				width: this.sizes?.width,
+				height: this.sizes?.height,
+				offsetX: offsets.x,
+				offsetY: offsets.y,
+			},
+		});
 	}
 
 	calcSizes() {
@@ -51,18 +68,25 @@ export class Image extends Plugin {
 			x: 0,
 			y: 0,
 		};
-		if (this.naturalWidth && this.view.width < this.naturalWidth) {
-			offset.x = (this.view.width - this.naturalWidth) / -2;
-		} else if (this.naturalWidth && this.view.width > this.naturalWidth) {
-			offset.x = (this.naturalWidth - this.view.width) / -2;
-		}
-		console.log(this.view.width, this.naturalWidth);
+		if (!this.sizes) return offset;
 
-		console.log(offset);
+		if (this.sizes.width < this.view.width) {
+			offset.x = (this.sizes.width - this.view.width) / 2;
+		} else if (this.sizes.width > this.view.width) {
+			offset.x = (this.view.width - this.sizes.width) / 2;
+		}
+
+		if (this.sizes.height < this.view.height) {
+			offset.y = (this.sizes.height - this.view.height) / 2;
+		} else if (this.sizes.height > this.view.height) {
+			offset.y = (this.view.height - this.sizes.height) / 2;
+		}
+
+		return offset;
 	}
 
 	cover(width?: number, height?: number, ratio?: number) {
-		if (width === undefined || height === undefined || ratio === undefined) return false;
+		if (width === undefined || height === undefined || ratio === undefined) return undefined;
 
 		if (width > height) {
 			return {
