@@ -1,24 +1,27 @@
 import * as PIXI from 'pixi.js';
 import { AppConfig } from './types/appConfig';
-import { Image } from './corePlugins/Image/Image';
-import { Plugin } from './coreUtils/Plugin';
+import { CustomEventDispatcher, Plugin } from './coreUtils';
+import { Image, Move } from './corePlugins';
 
 export const defaultConfig: AppConfig = {
 	rootElement: document.body,
 	imageUrl: '',
 };
 
-export class App {
+export class App extends CustomEventDispatcher {
 	config: AppConfig;
 	pixiApp: PIXI.Application;
 	private corePlugins: Plugin[] = [];
 	mainContainer: PIXI.Container;
 
 	constructor(props: Partial<AppConfig>) {
+		super();
 		this.config = { ...defaultConfig, ...props };
 
 		this.pixiApp = this.init();
 		this.mainContainer = new PIXI.Container();
+		this.mainContainer.eventMode = 'dynamic';
+		this.createEvents();
 
 		this.loadPlugins().then(() => {
 			this.pixiApp.stage.addChild(this.mainContainer);
@@ -26,7 +29,8 @@ export class App {
 	}
 
 	init() {
-		const app = new PIXI.Application({ antialias: true, resizeTo: window });
+		const container = document.querySelector('#app') as HTMLDivElement;
+		const app = new PIXI.Application({ antialias: true, resizeTo: container });
 		if (typeof this.config.rootElement === 'string') {
 			const element = document.querySelector(this.config.rootElement);
 			if (element) element.appendChild(app.view as any);
@@ -37,7 +41,7 @@ export class App {
 	}
 
 	async loadPlugins() {
-		const corePlugins: Plugin[] = [new Image(this)];
+		const corePlugins: Plugin[] = [new Image(this, this), new Move(this)];
 
 		for await (const plugin of corePlugins) {
 			new Promise((resolve) => {
@@ -48,5 +52,14 @@ export class App {
 				});
 			});
 		}
+	}
+
+	createEvents() {
+		window.addEventListener('resize', () => {
+			//FIXME Поправить ебаный костыль
+			setTimeout(() => {
+				this.dispatchEvent({ type: 'resize' });
+			}, 0);
+		});
 	}
 }

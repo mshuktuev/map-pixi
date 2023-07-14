@@ -46,6 +46,12 @@ export class Image extends Plugin {
 			this.sprite.x = offsets.x;
 			this.sprite.y = offsets.y;
 		}
+		console.log({
+			width: this.sizes?.width,
+			height: this.sizes?.height,
+			offsetX: offsets.x,
+			offsetY: offsets.y,
+		});
 
 		this.dispatchEvent({
 			type: 'imageInfo',
