@@ -5,5 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	const app = new App({
 		imageUrl: './images/map.jpg',
 		rootElement: '#app',
+		maxZoom: 2,
 	});
 });

@@ -32,6 +32,7 @@ export class Move extends Plugin {
 		maxX: 0,
 		maxY: 0,
 	};
+	private zoom: number = 1;
 	private startPosition: { x: number; y: number } | null = null;
 
 	constructor(app: App) {
@@ -39,9 +40,6 @@ export class Move extends Plugin {
 	}
 
 	init() {
-		this.dispatchEvent({
-			type: 'loaded',
-		});
 		this.app.addEventListener('imageInfo', (e) => {
 			this.imageInfo = e.detail;
 			console.log(this.imageInfo);
@@ -51,12 +49,29 @@ export class Move extends Plugin {
 			if (changed) this.move();
 			console.log(this.bounds);
 		});
+		this.app.addEventListener('zoom', (e) => {
+			this.zoom = e.detail.zoom;
+			this.calcBounds();
+			this.updatePositionAfterZoom();
+			console.log(this.bounds, this.currentMove);
+		});
+
 		this.createListeners();
+
+		this.dispatchEvent({
+			type: 'loaded',
+		});
+	}
+
+	private updatePositionAfterZoom() {
+		this.currentMove.x = this.currentMove.x * this.zoom;
+		this.currentMove.y = this.currentMove.y * this.zoom;
+		this.fixOutOfBounds();
 	}
 
 	calcBounds() {
-		const boundX = Math.abs(this.imageInfo.offsetX / 2);
-		const boundY = Math.abs(this.imageInfo.offsetY / 2);
+		const boundX = Math.abs(this.imageInfo.offsetX / 2) * this.zoom;
+		const boundY = Math.abs(this.imageInfo.offsetY / 2) * this.zoom;
 		this.bounds.minX = -boundX;
 		this.bounds.maxX = boundX;
 		this.bounds.minY = -boundY;

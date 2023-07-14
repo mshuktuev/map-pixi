@@ -2,10 +2,13 @@ import * as PIXI from 'pixi.js';
 import { AppConfig } from './types/appConfig';
 import { CustomEventDispatcher, Plugin } from './coreUtils';
 import { Image, Move } from './corePlugins';
+import { Zoom } from './corePlugins/Zoom/Zoom';
 
 export const defaultConfig: AppConfig = {
 	rootElement: document.body,
 	imageUrl: '',
+	minZoom: 1,
+	maxZoom: 1,
 };
 
 export class App extends CustomEventDispatcher {
@@ -41,7 +44,7 @@ export class App extends CustomEventDispatcher {
 	}
 
 	async loadPlugins() {
-		const corePlugins: Plugin[] = [new Image(this, this), new Move(this)];
+		const corePlugins: Plugin[] = [new Image(this, this), new Move(this), new Zoom(this)];
 
 		for await (const plugin of corePlugins) {
 			new Promise((resolve) => {
